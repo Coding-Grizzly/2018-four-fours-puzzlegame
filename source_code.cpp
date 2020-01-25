@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <windows.h> //GetStdHandle(), Sleep(), SetConsoleCursorPosition() 함수 사용
 #include <conio.h> //getch()와 kbhit() 함수 사용
 #include <ctime> //clock() 함수 사용
@@ -13,6 +14,7 @@ using namespace std;
 
 #define MDIM 4 //4x4 퍼즐맵의 크기
 #define PDIM 7 //7x7 퍼즐의 크기
+#define PNUM MDIM*MDIM // 네모칸의 수
 
 //게임 Map 그리기 시작 위치: 필요하다면 출력 위치를 조정할 수 있음 
 #define MAP_STARTX 15
@@ -22,148 +24,37 @@ using namespace std;
 #define SCORE_STARTX 34
 #define SCORE_STARTY 36
 
-static int numPat[16][7][7] =
-{
-	{ 2,2,2,2,2,2,2,
-	2,0,0,0,0,0,2,
-	2,0,0,0,0,0,2,
-	2,0,0,0,0,0,2, //빈칸
-	2,0,0,0,0,0,2,
-	2,0,0,0,0,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,0,1,0,0,2,
-	2,0,0,1,0,0,2,
-	2,0,0,1,0,0,2,  //1
-	2,0,0,1,0,0,2,
-	2,0,0,1,0,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,0,0,1,0,2,  //2
-	2,0,1,1,1,0,2,
-	2,0,1,0,0,0,2,
-	2,0,1,1,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,0,0,1,0,2,
-	2,0,1,1,1,0,2,  //3
-	2,0,0,0,1,0,2,
-	2,0,1,1,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,0,1,0,2,
-	2,0,1,0,1,0,2,
-	2,0,1,1,1,0,2,  //4
-	2,0,0,0,1,0,2,
-	2,0,0,0,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,1,0,0,0,2,
-	2,0,1,1,1,0,2,  //5
-	2,0,0,0,1,0,2,
-	2,0,1,1,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,0,0,0,2,
-	2,0,1,0,0,0,2,
-	2,0,1,1,1,0,2,  //6
-	2,0,1,0,1,0,2,
-	2,0,1,1,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,0,0,1,0,2,
-	2,0,0,0,1,0,2,  //7
-	2,0,0,0,1,0,2,
-	2,0,0,0,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,1,0,1,0,2,
-	2,0,1,1,1,0,2,  //8
-	2,0,1,0,1,0,2,
-	2,0,1,1,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,0,1,1,1,0,2,
-	2,0,1,0,1,0,2,
-	2,0,1,1,1,0,2,  //9
-	2,0,0,0,1,0,2,
-	2,0,0,0,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,1,1,1,2,
-	2,1,0,1,0,1,2,
-	2,1,0,1,0,1,2,  //10
-	2,1,0,1,0,1,2,
-	2,1,0,1,1,1,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,0,1,0,2,
-	2,1,0,0,1,0,2,
-	2,1,0,0,1,0,2,  //11
-	2,1,0,0,1,0,2,
-	2,1,0,0,1,0,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,1,1,1,2,
-	2,1,0,0,0,1,2,
-	2,1,0,1,1,1,2,  //12
-	2,1,0,1,0,0,2,
-	2,1,0,1,1,1,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,1,1,1,2,
-	2,1,0,0,0,1,2,
-	2,1,0,1,1,1,2,  //13
-	2,1,0,0,0,1,2,
-	2,1,0,1,1,1,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,1,0,1,2,
-	2,1,0,1,0,1,2,
-	2,1,0,1,1,1,2,  //14
-	2,1,0,0,0,1,2,
-	2,1,0,0,0,1,2,
-	2,2,2,2,2,2,2 },
-	{ 2,2,2,2,2,2,2,
-	2,1,0,1,1,1,2,
-	2,1,0,1,0,0,2,
-	2,1,0,1,1,1,2,  //15
-	2,1,0,0,0,1,2,
-	2,1,0,1,1,1,2,
-	2,2,2,2,2,2,2 }
-};
-
-enum COMMAND { Stop = 0, Left, Right, Down, Up, Non }; //방향키와 정지, 디폴트값 디코딩
+enum COMMAND { Stop = 0, Left, Right, Down, Up, Non };
 
 class puzzleGame
 {
 public:
 
-	puzzleGame(void); //초기화 함수; 필요시에 매개변수를 추가함
-	void gameDraw(void); // 퍼즐로 구성되는 게임 맵과 반복회수, 시간 출력함수; MAP_STARTX, MAP_STARTY 상수를 참조
-						 // 항상 고정 위치(gotoXY함수 사용)에 출력
-						 // 필요시에 매개변수를 추가
-	void puzzleDraw(int puzzle[][PDIM][PDIM], int x, int y, int k);// 하나의 퍼즐을 그리는 멤버함수
-	void puzzleMove(int moveKey); //퍼즐 이동시키는 멤버 함수; 필요시에 매개변수 추가함
+	puzzleGame(); //default 생성자: 클래스 객체 초기화 함수, 필요시에 매개변수를 추가함
+	~puzzleGame();// 소멸자: 클래스 객체의 소멸전에 동적할당의 해제와 같은 객체의 정리를 위해 사용됨
+	friend ostream & operator <<(ostream & outputStream, const puzzleGame& gmBot);
+					// gameDrawd 멤버함수 대신에 << 연산자 오버로딩를 통해 사용하시오.
+	void puzzleDraw(int puzzle[][PDIM][PDIM], int x, int y, int k) const; // 하나의 퍼즐을 그리는 멤버함수
+	void puzzleMove(int moveKey); //퍼즐 이동 함수; 필요시에 매개변수 추가함
 	void shuffle(int num);//퍼즐 맵 초기화; 50회 무작위 이동, 필요시에 인자 추가 할 수 있음
-	void getCommand(void);//키값에 따라 명령어를 디코딩하는 멤버 함수
-	int getAction(void) { return action; }; //private 멤버 변수 action을 class 밖에서 얻기 위한 함수
-	void setsTime(double time) { sTime = time; }; //메인 함수에서 받은 시작 시간으로 sTime을 초기화하는 인라인 함수
+	void getCommand(void);//모든 퍼즐이 제 위치에 있거나 ESC키가 눌러졌으면 정수 0을 반환
+						  // 방향키를 눌렀을 때는 해당 키값을 반환(LEFT, RIGHT, DOWN, UP)
+						  //필요시에 매개변수 인자를 추가할 수 있음
+	int getAction(void)	const { return action; }; //메인함수에서 action의 값을 읽는다.
 	int solvable(void); //풀 수 있는 퍼즐인지 판별하는 함수
+	void setCTime(clock_t ct) { cTime = ct; }; //cTime설정 인라인 함수
+	void setSTime(clock_t st) { sTime = st; }; //sTime설정 인라인 함수
 
 private:
 
-	int map[MDIM][MDIM]; //퍼즐 배열
-	int action; //어떤 행동을 수행할지 저장. (Stop, Left, Right, Down, Up, Non)
+	int(*numPat)[PDIM][PDIM];
+	int **map;
+
+	int action;
 	int x, y; //빈칸의 위치
 	int moveNum; //이동회수
 	clock_t sTime; //시작 시간
-	clock_t cTime; //현재 시간
+	clock_t cTime; //시작 시간
 };
 
 void gotoXY(int x, int y); //콘솔 화면에서 커서를 특정 위치로 이동
@@ -171,47 +62,100 @@ int getDirectKey();
 
 int main(void)
 {
-	puzzleGame gameBot; //class객체 생성
-	int action = 0; //동작 저장
-	gameBot.shuffle(50); //원하는 횟수만큼 퍼즐을 섞는다.
-	gameBot.setsTime(clock()); // 소요시간 계산을 위해 게임의 시작 시간을 기록해둔다.
-	while (1)
+	puzzleGame gameBot;
+
+	gameBot.shuffle(50); //50번 섞는다
+	gameBot.setCTime(clock()); 
+	gameBot.setSTime(clock()); //시작하기전 시간 초기화
+	cout << gameBot; //게임 화면 출력
+	gameBot.getCommand(); //입력, 퍼즐 완성 여부 확인
+
+	while (gameBot.getAction()) //action이 Stop이면 반복문이 종료된다.
 	{
-		gameBot.getCommand(); //퍼즐을 검사하거나 키보드 입력을 통해어떤 행동을 수행할지 action에 저장한다.
-		action = gameBot.getAction(); //class private의 action값을 불러온다.
-
-		if (action == Stop)  //퍼즐을 맞추거나 ESC키를 입력받은 경우 종료한다.
-			break;
-		else 
-			gameBot.puzzleMove(action); //입력받은 방향으로 퍼즐을 이동시킨다.
-
-		gameBot.gameDraw(); //다시 맵을 갱신한다.
+		gameBot.puzzleMove(gameBot.getAction()); // 입력된 키에 따라 퍼즐을 옮긴다.
+		gameBot.setCTime(clock()); //현재 시간을 저장한다.
+		cout << gameBot; // 화면출력
+		gameBot.getCommand(); //입력, 퍼즐 완성 여부 확인
 	}
 
 	system("cls"); //화면을 한번 지운다.
-	gameBot.setsTime(clock()); //시간을 초기화한다.
-	gameBot.gameDraw();
+	cout << gameBot; //화면 출력
 	gotoXY(SCORE_STARTX + 20, SCORE_STARTY);
-	cout << "The game is over!!" << endl<<endl<<endl; //안내문을 출력한다.
+	cout << "The game is over!!" << endl << endl << endl; //안내문을 출력한다.
+}
 
-	return 0;
+ostream & operator <<(ostream & outputStream, const puzzleGame& gmBot) 
+{ // gameDrawd 멤버함수 대신에 << 연산자 오버로딩를 통해 사용하시오.
+	gotoXY(SCORE_STARTX, SCORE_STARTY);
+	cout << "  이동 회수: " << gmBot.moveNum << endl;
+	gotoXY(SCORE_STARTX, SCORE_STARTY + 1);
+	cout.setf(ios::fixed);
+	cout.precision(1);
+	cout << "  소요 시간: " << (gmBot.cTime - gmBot.sTime) / 1000.0 << "초" << endl;
+	cout.unsetf(ios::fixed);
+	//이동 회수 출력, 소요시간 소수점 첫째 자리까지 출력
+
+	gotoXY(MAP_STARTX + 20, MAP_STARTY);
+	cout << "   Fifteen Puzzle" << endl; //제목 출력
+
+	for (int i = 0; i< MDIM; i++)
+		for (int j = 0; j< MDIM; j++)
+			gmBot.puzzleDraw(gmBot.numPat, MAP_STARTX + (j * 15), MAP_STARTY + (i * 8) + 1, gmBot.map[i][j]);
+	//puzzleDraw 함수 호출해 퍼즐 출력.
+
+	return outputStream;
 }
 
 puzzleGame::puzzleGame()
 {
-	for (int i = 0; i < MDIM*MDIM; i++)  
-		*(map[0] + i) = i+1;
-	map[MDIM-1][MDIM-1] = 0;
-	x = MDIM-1; y = MDIM-1;
+
+	int num = 1, temp;
+	ifstream fin;
+
+	numPat = new int[PNUM][PDIM][PDIM];
+	fin.open("..//NumberPattern.txt"); // "NumberPattern.txt" 파일이 프로젝트 폴더에 위치해야 함
+	if (fin.fail())
+	{
+		cout << "숫자 패턴 파일을 열 수 없습니다!\n";
+		exit(1);
+	}
+
+	for (int p = 0; p < PNUM; p++)
+		for (int i = 0; i< PDIM; i++)
+			for (int j = 0; j< PDIM; j++)
+			{
+				fin >> temp;
+				numPat[p][i][j] = temp;
+			}
+
+	map = new int*[MDIM]; // 이차원 포인터를 동적할당 한다.
+
+	for (int i = 0; i < MDIM; i++)
+		map[i] = new int[MDIM]; // 이차원 포인터를 동적할당한다.
+
+	for (int i = 0; i < MDIM; i++)
+		for (int j = 0; j < MDIM; j++)
+			map[i][j] = i * 4 + j + 1;
+	//퍼즐 맵 동적할당 및 값 할당
+	map[MDIM - 1][MDIM - 1] = 0;
+	x = MDIM - 1; y = MDIM - 1;
 	// 맵의 값을 1,2,3,~ ,MDIM*MDIM-1,0의 순서로 초기화 시키고 빈칸의 위치를 마지막으로 초기화시킨다.
 	sTime = 0; //시작시간을 초기화 시킨다.
 	moveNum = 0; //이동 회수를 초기화시킨다.
 
-	//게임 초기화 코드 작성
-
+				 //게임 초기화 코드 작성
 }
 
-void puzzleGame::puzzleDraw(int puzzle[][PDIM][PDIM], int x, int y, int k)
+puzzleGame::~puzzleGame()
+{
+	for (int i = 0; i < MDIM; i++)
+		delete[] map[i]; //배열 포인터를 초기화한다.
+
+	delete[] map; // 배열 포인터를 초기화한다.
+	delete[] numPat; //포인터 배열을 초기화 한다.
+}
+
+void puzzleGame::puzzleDraw(int puzzle[][PDIM][PDIM], int x, int y, int k) const
 { //7*7의 숫자 형태와, 입력할 위치, 입력할 숫자를 입력받는다.
 	for (int i = 0; i< PDIM; i++)
 	{
@@ -226,27 +170,6 @@ void puzzleGame::puzzleDraw(int puzzle[][PDIM][PDIM], int x, int y, int k)
 				cout << "□";
 		}
 	} //숫자 형태의 모양에 따라 기호를 다르게 출력한다.
-}
-
-void puzzleGame::gameDraw(void)
-{
-	gotoXY(SCORE_STARTX, SCORE_STARTY);
-	cout << "  이동 회수: " << moveNum << endl;
-	gotoXY(SCORE_STARTX, SCORE_STARTY + 1);
-	cout.setf(ios::fixed);
-	cout.precision(1);
-	cTime = clock();
-	cout << "  소요 시간: " << (cTime - sTime) / 1000.0 << "초" << endl;
-	cout.unsetf(ios::fixed);
-	//이동 회수 출력, 소요시간 소수점 첫째 자리까지 출력
-
-	gotoXY(MAP_STARTX + 20, MAP_STARTY);
-	cout << "   Fifteen Puzzle" << endl; //제목 출력
-
-	for (int i = 0; i< MDIM; i++)
-		for (int j = 0; j< MDIM; j++)
-			puzzleDraw(numPat, MAP_STARTX + (j * 15), MAP_STARTY + (i * 8) + 1, map[i][j]);
-				//puzzleDraw 함수 호출해 퍼즐 출력.
 }
 
 void puzzleGame::puzzleMove(int moveKey)
@@ -298,23 +221,21 @@ void puzzleGame::puzzleMove(int moveKey)
 
 void puzzleGame::getCommand(void)
 {
-	int i = 0; //맵의 값을 모두 비교하기 위해 임시변수를 설정해놓는다.
+	bool Flag = FALSE; //퍼즐이 맞추어졌는지 확인한다.
 
-	while (1) {
-		if (*(map[0] + i) != i + 1) //맵의 값을 순서대로 늘어나는 값에 비교하여 만약 중간에 틀리면 루프를 탈출한다.
-			break;
-		else if (i == MDIM*MDIM - 2) { //값이 배열의 크기의 마지막 값인 DIM*DIM-2 에 도달하면 명령을 수행하고 탈출
-			action = Stop; //정지 행동을 수행하게 끔 action을 Stop으로 초기화시킨다.
-			moveNum = 0; //정지 행동을 수행하기때문에 이동 회수를 초기화 시킨다.
-			break;
-		}
-		i++;
-	}
+	for(int i=0;i<MDIM;i++)
+		for (int j = 0; j < MDIM; j++) {
+			if ((map[i][j] != i * 4 + j + 1) && (i*j < (MDIM-1)*(MDIM-1))) { Flag = TRUE; }
+		} //중간에 틀린 부분이 발생하면 Flag가 TRUE로 설정된다.
+	if (Flag == FALSE) 
+		action = Stop; //퍼즐이 다 맞으면 action 을 Stop으로 한다.
+
 	if (action != Stop) //퍼즐이 맞추어지지 않은 경우 키보드로 키를 입력받는다.
 		switch (getDirectKey()) { //getDirectKey 함수를 통해 키를 입력받고 명령어를 디코딩해 action에 저장한다.
 		case ESC:
 			action = Stop;
 			moveNum = 0;
+			sTime = cTime = 0; //시간과 이동횟수를 초기화한다.
 			break;
 		case LEFT:
 			action = Left;
@@ -364,15 +285,15 @@ void puzzleGame::shuffle(int num)
 			if (solvable() == 1)//퍼즐을 풀지 못하는 경우로 섞일 수 있다. 풀 수 있는지 판별하여
 				break;				   //풀 수 있으면 1을 리턴하며 풀지못하면 0을 리턴하고 다시 섞는다.
 		}
-		sTime = clock(); //섞을 때는 시작 시간을 계속 초기화 시켜줌으로써 시간이 0으로 보이도록 한다.
-		gameDraw(); //맵을 갱신시킨다.
+		cTime = sTime = 0; //섞을 때는 시작 시간을 계속 초기화 시켜줌으로써 시간이 0으로 보이도록 한다.
+		cout << *this;
 		Sleep(100); //맵 변경이 보이도록 대기시간을 준다.
 	}
 }
 
 int puzzleGame::solvable(void) //무작위로 배열된 퍼즐이 풀수있는지 판별하는 함수 
 {
-	int inv_count = 0, k = 0, temp; //반전된 숫자 배열 세는 변수 등을 선언
+	int inv_count = 0, k = 0, temp, t_arr[MDIM*MDIM]; //반전된 숫자 배열 세는 변수 등을 선언
 
 	if (x != MDIM - 1 || y != MDIM - 1) //먼저 빈칸의 위치를 맨 아래 맨 오른쪽으로 이동시킨다.
 	{
@@ -383,9 +304,14 @@ int puzzleGame::solvable(void) //무작위로 배열된 퍼즐이 풀수있는지 판별하는 함수
 		x = MDIM - 1;
 	}
 
-	for (int i = 0; i < MDIM* MDIM - 2; i++) //섞여진 수들을 일렬로 나열시키고 반전된 수의 수를 샌다.
+	for (int i = 0; i < MDIM; i++)
+		for (int j = 0; j < MDIM; j++)
+			t_arr[i * 4 + j] = map[i][j];
+	//배열의 숫자들을 비교하기 위해 퍼즐 크기의 일차원 배열에 복사한다.
+
+	for (int i = 0; i < MDIM* MDIM - 2; i++)
 		for (int j = i + 1; j < MDIM * MDIM - 1; j++)
-			if (*(map[0] + i) > *(map[0] + j))
+			if (t_arr[i] > t_arr[j])
 				inv_count++;
 
 	if (inv_count % 2 == 1) //만약 반전된 수의 수가 홀수 개이면 풀 수 없는 퍼즐이며 0을 리턴한다.
