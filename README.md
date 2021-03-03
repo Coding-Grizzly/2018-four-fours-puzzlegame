@@ -1,4 +1,4 @@
-# 2018-four-fours-puzzlegame
+# 2018 Fifteen_Puzzle_Game
 
 This puzzle game needs opencv installed.
 Design oriented from 2048 puzzle game.
